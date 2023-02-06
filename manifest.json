@@ -22,6 +22,7 @@
     "*://*/*"
   ],
   "manifest_version": 3,
+  "devtools_page": "src/devtools/index.html",
   "name": "Storage Editor",
   "options_page": "src/options/index.html",
   "permissions": [

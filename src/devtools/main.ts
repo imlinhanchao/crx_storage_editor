@@ -1,6 +1,6 @@
 
 
-chrome.devtools.panels.create("StorageEditor", "icon.png", "panel.html", panel => {
+chrome.devtools.panels.create("StorageEditor", "icon.png", "src/panel/index.html", panel => {
     // code invoked on panel creation
     panel.onShown.addListener( (extPanelWindow) => {
         let sayHello = extPanelWindow.document.querySelector('#sayHello');
