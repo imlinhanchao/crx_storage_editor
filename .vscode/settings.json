@@ -1,3 +1,4 @@
 {
-  "GitCommitPlugin.ShowEmoji": true
+  "GitCommitPlugin.ShowEmoji": true,
+  "files.autoSave": "off"
 }
