@@ -25,7 +25,8 @@ window.addEventListener('message', (ev) => {
 function parseStorage(s: any) {
   Object.keys(s).forEach(k => {
     try {
-      s[k] = s[k] !== '' ? JSON.parse(s[k]) : '';
+      let data = JSON.parse(s[k]);
+      if (!isString(data)) s[k] = data;
     } catch (error) {}
   })
   return s;
@@ -101,5 +102,30 @@ function dataToTree(data: any, key: string, path: string): any {
 <style>
 body {
   background-color: var(--el-bg-color);
+}
+.el-tabs__content {
+  overflow: auto;
+}
+
+::-webkit-scrollbar-track-piece {
+    background: 0 0;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #b6c6ce;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 5px;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background-color: #2c3e50;
+}
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+.data-tree-node {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
