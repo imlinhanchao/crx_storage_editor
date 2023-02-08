@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useDark, useToggle } from '@vueuse/core'
-import { isArray, isObject } from './utils/is';
+import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from './utils/is';
 
 const isDark = useDark()
 useToggle(isDark)
@@ -18,15 +18,15 @@ window.addEventListener('message', (ev) => {
   switch(request.message) {
     case 'update':
       storage.value[request.type] = parseStorage(request.data);
-      console.log('storage', storage.value)
-      console.log('localTree', localTree.value)
       break;
   }
 })
 
 function parseStorage(s: any) {
   Object.keys(s).forEach(k => {
-    s[k] = s[k] !== '' ? JSON.parse(s[k]) : '';
+    try {
+      s[k] = s[k] !== '' ? JSON.parse(s[k]) : '';
+    } catch (error) {}
   })
   return s;
 }
@@ -35,7 +35,7 @@ const localTree = computed(() =>
   Object.keys(storage.value.local).map(k => dataToTree(storage.value.local[k], k, 'local'))
 )
 const sessionTree = computed(() => 
-  Object.keys(storage.value.local).map(k => dataToTree(storage.value.session[k], k, 'session'))
+  Object.keys(storage.value.session).map(k => dataToTree(storage.value.session[k], k, 'session'))
 )
 function dataToTree(data: any, key: string, path: string): any {
   if (isObject(data)) return { 
@@ -56,22 +56,44 @@ function dataToTree(data: any, key: string, path: string): any {
     <el-tab-pane label="Local Storage" name="local">
       <el-tree
         :data="localTree"
-        show-checkbox
         node-key="id"
         default-expand-all
         :expand-on-click-node="false"
       >
         <template #default="{ node, data }">
-          <span class="custom-tree-node">
+          <span class="data-tree-node">
             <b>{{ data.key }}</b> : 
             <span v-if="data.type">{{ data.type }}</span> 
-            <span v-if="data.data">{{ data.data }}</span>
+            <span v-else-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
+            <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
+            <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
+            <span v-else-if="isNull(data.data)" class="data-null">null</span>
+            <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
+            <span v-else class="data-empty">{{ data.data }}</span>
           </span>
         </template>
       </el-tree>
     </el-tab-pane>
     <el-tab-pane label="Session Storage" name="session">
-      
+      <el-tree
+        :data="sessionTree"
+        node-key="id"
+        default-expand-all
+        :expand-on-click-node="false"
+      >
+        <template #default="{ node, data }">
+          <span class="data-tree-node">
+            <b>{{ data.key }}</b> : 
+            <span v-if="data.type">{{ data.type }}</span> 
+            <span v-else-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
+            <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
+            <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
+            <span v-else-if="isNull(data.data)" class="data-null">null</span>
+            <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
+            <span v-else class="data-empty">{{ data.data }}</span>
+          </span>
+        </template>
+      </el-tree>
     </el-tab-pane>
   </el-tabs>
 </template>
