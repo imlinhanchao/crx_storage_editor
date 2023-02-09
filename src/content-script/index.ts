@@ -43,6 +43,9 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
     case 'setItem':
       setItem(request.data);
       break;
+    case 'removeItem':
+      removeItem(request.data);
+      break;
   }
 });
 
@@ -54,6 +57,18 @@ function setItem({ type, key, data }: { type: string, key: string, data: string 
       break;
     case 'session':
       sessionStorage.setItem(key, data);
+      break;
+    }
+}
+
+function removeItem({ type, key }: { type: string, key: string }) {
+  console.log('remove:', type, key);
+  switch(type) {
+    case 'local':
+      localStorage.removeItem(key);
+      break;
+    case 'session':
+      sessionStorage.removeItem(key);
       break;
     }
 }

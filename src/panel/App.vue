@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useDark, useToggle } from '@vueuse/core'
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from './utils/is';
-import { Edit, CircleClose, Check, RefreshLeft } from '@element-plus/icons-vue';
+import { Edit, CircleClose, Check, RefreshLeft, Remove } from '@element-plus/icons-vue';
 
 const isDark = useDark()
 useToggle(isDark)
@@ -64,11 +64,11 @@ const sessionTree = computed(() =>
 function dataToTree(data: any, key: string, path: string, root: string): any {
   path = path + '.' + key;
   if (isObject(data)) return { 
-    key, type: 'Object', root, path, children: Object.keys(data)
+    key, type: 'Object', root, path, data, children: Object.keys(data)
       .map(k => Object.assign({ parent: data }, dataToTree(data[k], k, path + '.' + k, root))) 
   };
   else if (isArray(data)) return {
-    key, type: 'Array', path, root, children: data
+    key, type: 'Array', path, root, data, children: data
       .map((d, i) => Object.assign({ parent: data }, dataToTree(d, i + '', path + '.' + i, root)))
   }
   else return { key, path, data, children: [], root } 
@@ -83,11 +83,29 @@ function toData(data:any) {
 const editPath = ref<any>({})
 const editValue = ref<any>({})
 const editKey = ref<any>({})
-const defaultExpandIds = ref<any>([])
+const pushData = ref<any>({})
+function refresh() {
+  window.postMessage({
+    message: 'send'
+  }, '*')
+}
 function edit(node: any) {
   editValue.value[node.path] = toView(node.data)
   editKey.value[node.path] = node.key
   editPath.value[node.path] = true;
+}
+function remove(node: any) {
+  let type = node.path.split('.')[0];
+  if (node.path.replace(/^\w+\./, '') == node.key) {
+    delete storage.value[type][node.root];
+    removeEmit(type, node.root);
+  } else {
+    delete node.parent[node.key];
+    updateEmit(type, node.root, toData(storage.value[type][node.root]))
+  }
+}
+function push(node: any) {
+
 }
 function confirm(node: any) {
   try {
@@ -107,16 +125,22 @@ function updateEmit(type: string, key: string, data: string) {
     message: 'setItem', data: { type, key, data }
   }, '*')
 }
+function removeEmit(type: string, key: string) {
+  delete historyStorage.value[type][key];
+  window.postMessage({
+    message: 'removeItem', data: { type, key }
+  }, '*')
+}
+const defaultExpandIds = ref<any>([])
 function handleNodeExpand(data: any) {
-  // 保存当前展开的节点
   let flag = false
   defaultExpandIds.value.some((item: any) => {
-    if (item === data.path) { // 判断当前节点是否存在， 存在不做处理
+    if (item === data.path) {
       flag = true
       return true
     }
   })
-  if (!flag) { // 不存在则存到数组里
+  if (!flag) {
     defaultExpandIds.value.push(data.path)
   }
 }
@@ -140,11 +164,6 @@ function removeChildrenIds(data: any) {
   }
 }
 
-function refresh() {
-  window.postMessage({
-    message: 'send'
-  }, '*')
-}
 </script>
 
 <template>
@@ -166,7 +185,7 @@ function refresh() {
           @node-collapse="handleNodeCollapse"
         >
           <template #default="{ node, data }">
-            <span class="data-tree-node">
+            <span class="data-tree-node" :data-path="data.path" :data-key="data.key">
               <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
               <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
               <span class="sp">: </span>
@@ -181,11 +200,23 @@ function refresh() {
               </span>
               <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
               <span class="action" v-if="!editPath[data.path]">
-                <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+                <el-button type="primary" size="small" link @click="edit(data)">
+                  <font-awesome-icon icon="fa-solid fa-pen" />
+                </el-button>
+                <el-button type="primary" size="small" link @click="remove(data)">
+                  <font-awesome-icon icon="fa-solid fa-trash" />
+                </el-button>
+                <el-button type="primary" size="small" link @click="push(data)" v-if="data.type">
+                  <font-awesome-icon icon="fa-solid fa-circle-plus" />
+                </el-button>
               </span>
               <span class="confirm" v-if="editPath[data.path]">
-                <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
-                <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
+                <el-button type="primary" size="small" link @click="editPath[data.path] = false">
+                  <font-awesome-icon icon="fa-solid fa-circle-xmark" />
+                </el-button>
+                <el-button type="primary" size="small" link @click="confirm(data)">
+                  <font-awesome-icon icon="fa-solid fa-floppy-disk" />
+                </el-button>
               </span>
             </span>
           </template>
@@ -214,11 +245,12 @@ function refresh() {
               </span>
               <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
               <span class="action" v-if="!editPath[data.path]">
-                <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+                <el-button type="primary" size="small" link :icon="Edit" @click="edit(data)"/>
+                <el-button type="primary" size="small" link :icon="Remove" @click="edit(data)"/>
               </span>
               <span class="confirm" v-if="editPath[data.path]">
-                <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
-                <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
+                <span><el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" /></span>
+                <span><el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" /></span>
               </span>
             </span>
           </template>
@@ -228,69 +260,32 @@ function refresh() {
   </section>
 </template>
 
-<style>
-body {
-  background-color: var(--el-bg-color);
-  font-family: 'Roboto Mono', Menlo, Consolas, monospace;
-}
-* {
-  font-family: inherit;
-}
-.el-input__inner {
-  color: inherit;
-}
-.el-tabs__content {
-  overflow: auto;
-}
-
-::-webkit-scrollbar-track-piece {
-    background: 0 0;
-}
-::-webkit-scrollbar-thumb {
-    background-color: #b6c6ce;
-    border: 3px solid transparent;
-    background-clip: padding-box;
-    border-radius: 5px;
-}
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
+<style lang="scss" scoped>
 .data-tree-node {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: flex;
   align-items: center;
-}
-.data-tree-node .key {
-  color: #8128e8;
-}
-.data-tree-node .sp {
-  margin-right: .5em;
-}
-.action {
-  display: none;
-}
-.data-tree-node:hover .action {
-  display: inline-block;
-}
-.el-button--primary.is-link, .el-button--primary.is-plain, .el-button--primary.is-text {
-  color: inherit;
-  margin: 0 2px;
-}
-.el-button.is-link:focus, .el-button.is-link:hover {
-  color: inherit;
-  background: #e8faf2;
-}
-.dark ::-webkit-scrollbar-thumb {
-    background-color: #2c3e50;
-}
-.dark .data-tree-node .key {
-  color: #cea3f9;
-}
-.dark .el-button.is-link:focus, .dark .el-button.is-link:hover {
-  background: #4e6e8e;
+  justify-content: flex-start;
+  width: 100%;
+  .key {
+    color: #8128e8;
+  }
+  .sp {
+    margin-right: .5em;
+  }
+  .action {
+    display: none;
+  }
+  &:hover {
+    .action {
+      display: inline-block;
+    }
+  }
+  .confirm {
+    margin-left: 5px;
+  }
 }
 .wrapper {
   position: relative;
@@ -303,5 +298,12 @@ body {
 }
 .refresh .el-button--large {
   font-size: 1.8em;
+}
+.dark {
+  .data-tree-node {
+    .key {
+      color: #cea3f9;
+    }
+  }
 }
 </style>
