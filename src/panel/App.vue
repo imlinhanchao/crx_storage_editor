@@ -76,6 +76,9 @@ function dataToTree(data: any, key: string, path: string, root: string): any {
 function toView(data: any) {
   return JSON.stringify(data);
 }
+function toData(data:any) {
+  return isString(data) ? data : toView(data)
+}
 
 const editPath = ref<any>({})
 const editValue = ref<any>({})
@@ -96,7 +99,7 @@ function confirm(node: any) {
   }
   editPath.value[node.path] = false;
   let type = node.path.split('.')[0];
-  updateEmit(type, node.root, toView(storage.value[type][node.root]))
+  updateEmit(type, node.root, toData(storage.value[type][node.root]))
 }
 function updateEmit(type: string, key: string, data: string) {
   historyStorage.value[type][key] = data
