@@ -40,8 +40,23 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
         message: 'listen'
       })      
       break;
+    case 'setItem':
+      setItem(request.data);
+      break;
   }
 });
+
+function setItem({ type, key, data }: { type: string, key: string, data: string }) {
+  console.log('update:', type, key, data);
+  switch(type) {
+    case 'local':
+      localStorage.setItem(key, data);
+      break;
+    case 'session':
+      sessionStorage.setItem(key, data);
+      break;
+    }
+}
 
 function send(type: string) {
   switch (type) {

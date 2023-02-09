@@ -39,6 +39,9 @@ chrome.devtools.panels.create("StorageEditor", "icon.png", "src/panel/index.html
       function(response) {
         console.log('send response', response);
     });
+
+    panelWindow[chrome.devtools.inspectedWindow.tabId].removeEventListener('message', panelListener);
+    panelWindow[chrome.devtools.inspectedWindow.tabId].addEventListener('message', panelListener);
   });
 });
 
@@ -55,6 +58,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     })
   }
 });
+
+function panelListener({ data }: { data: any}) {
+  chrome.tabs.sendMessage(chrome.devtools.inspectedWindow.tabId, 
+    { from: '__devtools_storage_editor', ...data }, 
+    function(response) {
+      console.log('send response', response);
+  });
+}
 
 chrome.tabs.onActivated
 

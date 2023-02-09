@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useDark, useToggle } from '@vueuse/core'
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from './utils/is';
-import { EditPen } from '@element-plus/icons-vue';
+import { Edit, CircleClose, Check } from '@element-plus/icons-vue';
 
 const isDark = useDark()
 useToggle(isDark)
@@ -42,7 +42,7 @@ function updateStorage({type, data}: { type: string, data: any }) {
     if (!oldKeys.includes(k)) oldStorage[k] = parseStorage(data[k]);
   })
 
-  oldStorageValue = data;
+  historyStorage.value[type] = data;
 }
 
 function parseStorage(s: string) {
@@ -54,23 +54,90 @@ function parseStorage(s: string) {
 }
 
 const localTree = computed(() => 
-  Object.keys(storage.value.local).map(k => dataToTree(storage.value.local[k], k, 'local'))
+  Object.keys(storage.value.local)
+    .map(k => Object.assign({ parent: storage.value.local }, dataToTree(storage.value.local[k], k, 'local', k)))
 )
 const sessionTree = computed(() => 
-  Object.keys(storage.value.session).map(k => dataToTree(storage.value.session[k], k, 'session'))
+  Object.keys(storage.value.session)
+    .map(k => Object.assign({ parent: storage.value.session }, dataToTree(storage.value.session[k], k, 'session', k)))
 )
-function dataToTree(data: any, key: string, path: string): any {
+function dataToTree(data: any, key: string, path: string, root: string): any {
+  path = path + '.' + key;
   if (isObject(data)) return { 
-    key, type: 'Object', path, children: Object.keys(data)
-      .map(k => Object.assign({ parent: data }, dataToTree(data[k], k, path + '.' + k))) 
+    key, type: 'Object', root, path, children: Object.keys(data)
+      .map(k => Object.assign({ parent: data }, dataToTree(data[k], k, path + '.' + k, root))) 
   };
   else if (isArray(data)) return {
-    key, type: 'Array', path, children: data.map((d, i) => dataToTree(d, i + '', path + '.' + i)) 
+    key, type: 'Array', path, root, children: data
+      .map((d, i) => Object.assign({ parent: data }, dataToTree(d, i + '', path + '.' + i, root)))
   }
-  else return { key, __key: key, path, data, view: toView(data), children: [] } 
+  else return { key, path, data, children: [], root } 
 }
 function toView(data: any) {
   return JSON.stringify(data);
+}
+
+const editPath = ref<any>({})
+const editValue = ref<any>({})
+const editKey = ref<any>({})
+const defaultExpandIds = ref<any>([])
+function edit(node: any) {
+  editValue.value[node.path] = toView(node.data)
+  editKey.value[node.path] = node.key
+  editPath.value[node.path] = true;
+}
+function confirm(node: any) {
+  try {
+    if (editKey.value[node.path] != node.key) delete node.parent[node.key];
+    let data = JSON.parse(editValue.value[node.path]);
+    node.parent[editKey.value[node.path]] = data;
+  } catch (error) {
+    node.parent[node.key] = editValue.value[node.path];
+  }
+  editPath.value[node.path] = false;
+  let type = node.path.split('.')[0];
+  updateEmit(type, node.root, toView(storage.value[type][node.root]))
+}
+function updateEmit(type: string, key: string, data: string) {
+  historyStorage.value[type][key] = data
+  window.postMessage({
+    message: 'setItem', data: { type, key, data }
+  }, '*')
+}
+function handleNodeExpand(data: any) {
+  // 保存当前展开的节点
+  let flag = false
+  defaultExpandIds.value.some((item: any) => {
+    if (item === data.path) { // 判断当前节点是否存在， 存在不做处理
+      flag = true
+      return true
+    }
+  })
+  if (!flag) { // 不存在则存到数组里
+    defaultExpandIds.value.push(data.path)
+  }
+}
+// 树节点关闭
+function handleNodeCollapse(data: any) {
+  // 删除当前关闭的节点
+  defaultExpandIds.value.some((item: any, i: number) => {
+    if (item === data.path) {
+      defaultExpandIds.value.splice(i, 1)
+    }
+  })
+  removeChildrenIds(data) // 这里主要针对多级树状结构，当关闭父节点时，递归删除父节点下的所有子节点
+}
+// 删除树子节点
+function removeChildrenIds(data: any) {
+  if (data.children) {
+    data.children.forEach(function(item: any) {
+      const index = defaultExpandIds.value.indexOf(item.path)
+      if (index > 0) {
+        defaultExpandIds.value.splice(index, 1)
+      }
+      removeChildrenIds(item)
+    })
+  }
 }
 </script>
 
@@ -84,14 +151,17 @@ function toView(data: any) {
         :data="localTree"
         node-key="path"
         :expand-on-click-node="false"
+        :default-expanded-keys="defaultExpandIds"
+        @node-expand="handleNodeExpand"
+        @node-collapse="handleNodeCollapse"
       >
         <template #default="{ node, data }">
           <span class="data-tree-node">
-            <b class="key" v-if="!data.edit">{{ data.key }}</b>
-            <el-input class="key" type="text" v-model="data.key" v-if="data.edit" size="small"/>
+            <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
+            <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
             <span class="sp">: </span>
             <span v-if="data.type">{{ data.type }}</span> 
-            <span v-else class="value" v-if="!data.edit">
+            <span v-else class="value" v-if="!editPath[data.path]">
               <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
               <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
               <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
@@ -99,9 +169,13 @@ function toView(data: any) {
               <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
               <span v-else class="data-empty">{{ data.data }}</span>
             </span>
-            <el-input type="text" v-model="data.view" v-if="data.edit" size="small"/>
-            <span class="action" v-if="!data.type">
-              <el-button type="primary" :icon="EditPen" size="small" link @click="data.edit = true" />
+            <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
+            <span class="action" v-if="!editPath[data.path]">
+              <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+            </span>
+            <span class="confirm" v-if="editPath[data.path]">
+              <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
+              <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
             </span>
           </span>
         </template>
@@ -116,14 +190,26 @@ function toView(data: any) {
       >
         <template #default="{ node, data }">
           <span class="data-tree-node">
-            <b class="key">{{ data.key }}</b> : 
+            <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
+            <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
+            <span class="sp">: </span>
             <span v-if="data.type">{{ data.type }}</span> 
-            <span v-else-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
-            <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
-            <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
-            <span v-else-if="isNull(data.data)" class="data-null">null</span>
-            <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
-            <span v-else class="data-empty">{{ data.data }}</span>
+            <span v-else class="value" v-if="!editPath[data.path]">
+              <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
+              <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
+              <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
+              <span v-else-if="isNull(data.data)" class="data-null">null</span>
+              <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
+              <span v-else class="data-empty">{{ data.data }}</span>
+            </span>
+            <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
+            <span class="action" v-if="!editPath[data.path]">
+              <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+            </span>
+            <span class="confirm" v-if="editPath[data.path]">
+              <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
+              <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
+            </span>
           </span>
         </template>
       </el-tree>
@@ -155,9 +241,6 @@ body {
     background-clip: padding-box;
     border-radius: 5px;
 }
-.dark ::-webkit-scrollbar-thumb {
-    background-color: #2c3e50;
-}
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -170,7 +253,7 @@ body {
   align-items: center;
 }
 .data-tree-node .key {
-  color: #cea3f9;
+  color: #8128e8;
 }
 .data-tree-node .sp {
   margin-right: .5em;
@@ -180,5 +263,22 @@ body {
 }
 .data-tree-node:hover .action {
   display: inline-block;
+}
+.el-button--primary.is-link, .el-button--primary.is-plain, .el-button--primary.is-text {
+  color: inherit;
+  margin: 0 2px;
+}
+.el-button.is-link:focus, .el-button.is-link:hover {
+  color: inherit;
+  background: #e8faf2;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background-color: #2c3e50;
+}
+.dark .data-tree-node .key {
+  color: #cea3f9;
+}
+.dark .el-button.is-link:focus, .dark .el-button.is-link:hover {
+  background: #4e6e8e;
 }
 </style>
