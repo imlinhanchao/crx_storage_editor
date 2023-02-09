@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useDark, useToggle } from '@vueuse/core'
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from './utils/is';
-import { Edit, CircleClose, Check } from '@element-plus/icons-vue';
+import { Edit, CircleClose, Check, RefreshLeft } from '@element-plus/icons-vue';
 
 const isDark = useDark()
 useToggle(isDark)
@@ -120,17 +120,14 @@ function handleNodeExpand(data: any) {
     defaultExpandIds.value.push(data.path)
   }
 }
-// 树节点关闭
 function handleNodeCollapse(data: any) {
-  // 删除当前关闭的节点
   defaultExpandIds.value.some((item: any, i: number) => {
     if (item === data.path) {
       defaultExpandIds.value.splice(i, 1)
     }
   })
-  removeChildrenIds(data) // 这里主要针对多级树状结构，当关闭父节点时，递归删除父节点下的所有子节点
+  removeChildrenIds(data)
 }
-// 删除树子节点
 function removeChildrenIds(data: any) {
   if (data.children) {
     data.children.forEach(function(item: any) {
@@ -142,82 +139,93 @@ function removeChildrenIds(data: any) {
     })
   }
 }
+
+function refresh() {
+  window.postMessage({
+    message: 'send'
+  }, '*')
+}
 </script>
 
 <template>
-  <el-tabs
-    v-model="activeName"
-    type="card"
-  >
-    <el-tab-pane label="Local Storage" name="local">
-      <el-tree
-        :data="localTree"
-        node-key="path"
-        :expand-on-click-node="false"
-        :default-expanded-keys="defaultExpandIds"
-        @node-expand="handleNodeExpand"
-        @node-collapse="handleNodeCollapse"
-      >
-        <template #default="{ node, data }">
-          <span class="data-tree-node">
-            <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
-            <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
-            <span class="sp">: </span>
-            <span v-if="data.type">{{ data.type }}</span> 
-            <span v-else class="value" v-if="!editPath[data.path]">
-              <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
-              <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
-              <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
-              <span v-else-if="isNull(data.data)" class="data-null">null</span>
-              <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
-              <span v-else class="data-empty">{{ data.data }}</span>
+  <section class="wrapper">
+    <div class="refresh">
+      <el-button type="primary" size="large" :icon="RefreshLeft" link @click="refresh" />
+    </div>
+    <el-tabs
+      v-model="activeName"
+      type="card"
+    >
+      <el-tab-pane label="Local Storage" name="local">
+        <el-tree
+          :data="localTree"
+          node-key="path"
+          :expand-on-click-node="false"
+          :default-expanded-keys="defaultExpandIds"
+          @node-expand="handleNodeExpand"
+          @node-collapse="handleNodeCollapse"
+        >
+          <template #default="{ node, data }">
+            <span class="data-tree-node">
+              <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
+              <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
+              <span class="sp">: </span>
+              <span v-if="data.type">{{ data.type }}</span> 
+              <span v-else class="value" v-if="!editPath[data.path]">
+                <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
+                <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
+                <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
+                <span v-else-if="isNull(data.data)" class="data-null">null</span>
+                <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
+                <span v-else class="data-empty">{{ data.data }}</span>
+              </span>
+              <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
+              <span class="action" v-if="!editPath[data.path]">
+                <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+              </span>
+              <span class="confirm" v-if="editPath[data.path]">
+                <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
+                <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
+              </span>
             </span>
-            <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
-            <span class="action" v-if="!editPath[data.path]">
-              <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+          </template>
+        </el-tree>
+      </el-tab-pane>
+      <el-tab-pane label="Session Storage" name="session">
+        <el-tree
+          :data="sessionTree"
+          node-key="id"
+          default-expand-all
+          :expand-on-click-node="false"
+        >
+          <template #default="{ node, data }">
+            <span class="data-tree-node">
+              <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
+              <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
+              <span class="sp">: </span>
+              <span v-if="data.type">{{ data.type }}</span> 
+              <span v-else class="value" v-if="!editPath[data.path]">
+                <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
+                <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
+                <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
+                <span v-else-if="isNull(data.data)" class="data-null">null</span>
+                <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
+                <span v-else class="data-empty">{{ data.data }}</span>
+              </span>
+              <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
+              <span class="action" v-if="!editPath[data.path]">
+                <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
+              </span>
+              <span class="confirm" v-if="editPath[data.path]">
+                <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
+                <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
+              </span>
             </span>
-            <span class="confirm" v-if="editPath[data.path]">
-              <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
-              <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
-            </span>
-          </span>
-        </template>
-      </el-tree>
-    </el-tab-pane>
-    <el-tab-pane label="Session Storage" name="session">
-      <el-tree
-        :data="sessionTree"
-        node-key="id"
-        default-expand-all
-        :expand-on-click-node="false"
-      >
-        <template #default="{ node, data }">
-          <span class="data-tree-node">
-            <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
-            <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
-            <span class="sp">: </span>
-            <span v-if="data.type">{{ data.type }}</span> 
-            <span v-else class="value" v-if="!editPath[data.path]">
-              <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
-              <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
-              <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
-              <span v-else-if="isNull(data.data)" class="data-null">null</span>
-              <span v-else-if="isUnDef(data.data)" class="data-undefined">undefined</span>
-              <span v-else class="data-empty">{{ data.data }}</span>
-            </span>
-            <el-input type="text" v-model="editValue[data.path]" v-if="editPath[data.path]" size="small"/>
-            <span class="action" v-if="!editPath[data.path]">
-              <el-button type="primary" :icon="Edit" size="small" link @click="edit(data)" />
-            </span>
-            <span class="confirm" v-if="editPath[data.path]">
-              <el-button type="primary" :icon="CircleClose" size="small" link @click="editPath[data.path] = false" />
-              <el-button type="primary" :icon="Check" size="small" link @click="confirm(data)" />
-            </span>
-          </span>
-        </template>
-      </el-tree>
-    </el-tab-pane>
-  </el-tabs>
+          </template>
+        </el-tree>
+      </el-tab-pane>
+    </el-tabs>
+  </section>
 </template>
 
 <style>
@@ -283,5 +291,17 @@ body {
 }
 .dark .el-button.is-link:focus, .dark .el-button.is-link:hover {
   background: #4e6e8e;
+}
+.wrapper {
+  position: relative;
+}
+.refresh {
+  position: absolute;
+  top: .5em;
+  right: 1em;
+  z-index: 100;
+}
+.refresh .el-button--large {
+  font-size: 1.8em;
 }
 </style>
