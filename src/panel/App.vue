@@ -189,7 +189,7 @@ function removeChildrenIds(data: any) {
               <b class="key" v-if="!editPath[data.path]">{{ data.key }}</b>
               <el-input class="key" type="text" v-model="editKey[data.path]" v-if="editPath[data.path]" size="small"/>
               <span class="sp">: </span>
-              <span v-if="data.type">{{ data.type }}</span> 
+              <span v-if="data.type && editPath[data.path]">{{ data.type }}</span> 
               <span v-else class="value" v-if="!editPath[data.path]">
                 <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
                 <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
