@@ -1,6 +1,11 @@
 {
   "action": {
-    "default_popup": "src/popup/index.html"
+    "default_popup": "src/panel/index.html#/popup"
+  },
+  "icons": {
+    "128": "public/logo.png",
+    "16": "public/logo.png",
+    "48": "public/logo.png"
   },
   "background": {
     "service_worker": "src/background/index.ts",
@@ -24,7 +29,6 @@
   "manifest_version": 3,
   "devtools_page": "src/devtools/index.html",
   "name": "Storage Editor",
-  "options_page": "src/options/index.html",
   "permissions": [
     "storage",
     "activeTab"

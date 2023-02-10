@@ -103,6 +103,11 @@ dist
 # TernJS port file
 .tern-port
 
+# Lock file
 pnpm-lock.yaml
 yarn.lock
 package-lock.json
+
+# crx file
+*.crx
+*.pem
