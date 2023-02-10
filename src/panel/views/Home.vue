@@ -289,7 +289,7 @@ const tabData = [
   justify-content: flex-start;
   width: 100%;
   .key {
-    color: #8128e8;
+    color: #42b983; //#8128e8;
   }
   .sp {
     margin-right: .5em;
@@ -325,6 +325,7 @@ const tabData = [
   justify-items: center;
   img {
     width: 25px;
+    height: 25px;
   }
  .el-button--large {
     z-index: 100;
@@ -352,7 +353,7 @@ const tabData = [
 .dark {
   .data-tree-node {
     .key {
-      color: #cea3f9;
+      color: #42b983;// #cea3f9;
     }
   }
 }

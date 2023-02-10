@@ -9,9 +9,12 @@ p {
   align-items: center;
   color: var(--el-color-primary);
   font-weight: bold;
+  padding: 0 10px 0 5px;
+  font-size: 1.4em;
 }
 img {
   width: 20px;
-  margin: 0 5px;
+  height: 20px;
+  margin: 3px 5px 0;
 }
 </style>
