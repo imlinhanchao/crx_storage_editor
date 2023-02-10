@@ -1,6 +1,6 @@
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faPen, faTrash, faCircleXmark, faFloppyDisk, faCirclePlus, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faPen, faTrash, faCircleXmark, faFloppyDisk, faCirclePlus, faRotateRight, faBan } from "@fortawesome/free-solid-svg-icons";
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
@@ -11,7 +11,7 @@ import App from "./App.vue";
 import { router } from "./router";
 
 [
-  faCircleXmark, faPen, faTrash, faFloppyDisk, faCirclePlus, faRotateRight
+  faCircleXmark, faPen, faTrash, faFloppyDisk, faCirclePlus, faRotateRight, faBan
 ].map(fa => library.add(fa))
 
 const app = createApp(App)

@@ -2,7 +2,7 @@
 import { computed, nextTick, ref } from 'vue';
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from '../utils/is';
 
-const activeName = ref('local');
+const typeName = ref('local');
 const storage = ref<any>({
   local: {} as any,
   session: {} as any,
@@ -93,10 +93,19 @@ function refresh() {
     message: 'send'
   }, '*')
 }
+function clear(type: string) {
+  Object.keys(storage.value[type]).forEach(k => {
+    delete storage.value[type][k];
+    removeEmit(type, k);
+  })
+}
 function getProps(obj: any) {
   let i = 1;
   while (obj[`prop${i}`]) i++;
   return `prop${i}`;
+}
+function isRoot(node: any) {
+  return node.parent == storage.value.local || node.parent == storage.value.session;
 }
 function edit(node: any) {
   editValue.value[node.path] = toView(node.data)
@@ -135,15 +144,19 @@ function cancel(node:any) {
   }
 }
 function confirm(node: any) {
+  let type = node.path.split('.')[0];
+  if (editKey.value[node.path] != node.key) delete node.parent[node.key];
+  if (isRoot(node)) {
+    removeEmit(type, node.root);
+    node.root = editKey.value[node.path];
+  }
   try {
-    if (editKey.value[node.path] != node.key) delete node.parent[node.key];
     let data = JSON.parse(editValue.value[node.path]);
     node.parent[editKey.value[node.path]] = data;
   } catch (error) {
     node.parent[node.key] = editValue.value[node.path];
   }
   editPath.value[node.path] = false;
-  let type = node.path.split('.')[0];
   updateEmit(type, node.root, toData(storage.value[type][node.root]))
 }
 function updateEmit(type: string, key: string, data: string) {
@@ -206,14 +219,22 @@ const tabData = [
 </script>
 <template>
   <section class="wrapper">
-    <div class="refresh">
+    <div class="toolbar">
       <img src="/logo.png" />
-      <el-button type="primary" size="large" link @click="refresh">
-        <font-awesome-icon icon="fa-solid fa-rotate-right" />
-      </el-button>
+      <span>
+        <el-button type="primary" size="large" link @click="clear(typeName)">
+          <font-awesome-icon icon="fa-solid fa-ban" />
+        </el-button>
+        <el-button type="primary" size="large" link @click="push({ data: storage[typeName], path: typeName })">
+          <font-awesome-icon icon="fa-solid fa-circle-plus" />
+        </el-button>
+        <el-button class="transform" type="primary" size="large" link @click="refresh">
+          <font-awesome-icon icon="fa-solid fa-rotate-right" />
+        </el-button>
+      </span>
     </div>
     <el-tabs
-      v-model="activeName"
+      v-model="typeName"
       type="card"
     >
       <el-tab-pane v-for="t in tabData" :key="t.name" :label="t.label" :name="t.name">
@@ -239,7 +260,7 @@ const tabData = [
               />
               <span class="sp">: </span>
               <span v-if="data.type && !editPath[data.path]">{{ data.type }}</span> 
-              <span v-else class="value" v-if="!editPath[data.path]">
+              <span v-else class="value" v-if="!editPath[data.path]" :title="toView(data.data)">
                 <span v-if="isString(data.data)" class="data-string">"{{ data.data }}"</span>
                 <span v-else-if="isNumber(data.data)" class="data-number">{{ data.data }}</span>
                 <span v-else-if="isBoolean(data.data)" class="data-boolean">{{ data.data }}</span>
@@ -315,7 +336,7 @@ const tabData = [
   position: relative;
   height: 100%;
 }
-.refresh {
+.toolbar {
   position: absolute;
   top: .5em;
   left: 1em;
@@ -327,8 +348,10 @@ const tabData = [
     width: 25px;
     height: 25px;
   }
- .el-button--large {
+  span {
     z-index: 100;
+  }
+ .el-button--large {
     font-size: 1.8em;
     transition: all .3s;
     &:hover, &:focus {
@@ -337,16 +360,18 @@ const tabData = [
     &:hover, &:active {
       color: var(--el-color-primary);
     }
-    &:active {
-      --tw-translate-x: 0;
-      --tw-translate-y: 0;
-      --tw-rotate: 360deg;
-      --tw-skew-x: 0;
-      --tw-skew-y: 0;
-      --tw-scale-x: 1;
-      --tw-scale-y: 1;
-      transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-      transform-origin: center;
+    &.transform {
+      &:active {
+        --tw-translate-x: 0;
+        --tw-translate-y: 0;
+        --tw-rotate: 360deg;
+        --tw-skew-x: 0;
+        --tw-skew-y: 0;
+        --tw-scale-x: 1;
+        --tw-scale-y: 1;
+        transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+        transform-origin: center;
+      }
     }
  }
 }

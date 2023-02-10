@@ -1,12 +1,18 @@
 {
+  "manifest_version": 3,
+  "name": "Storage Editor",
+  "version": "1.0.0",
   "action": {
     "default_popup": "src/panel/index.html#/popup"
   },
+  "description": "Editor for Local Storage and Session Storage.",
   "icons": {
     "128": "public/logo.png",
     "16": "public/logo.png",
     "48": "public/logo.png"
   },
+  "author": "Hancel.Lin",
+  "homepage_url": "https://github.com/imlinhanchao/crx_storage_editor",
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
@@ -26,14 +32,10 @@
   "host_permissions": [
     "*://*/*"
   ],
-  "manifest_version": 3,
   "devtools_page": "src/devtools/index.html",
-  "name": "Storage Editor",
   "permissions": [
-    "storage",
     "activeTab"
   ],
-  "version": "1.0.0",
   "web_accessible_resources": [
     {
       "matches": [
