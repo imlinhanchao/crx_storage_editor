@@ -49,6 +49,7 @@ html.dark, html, :root {
 .el-tabs__content {
   overflow: auto;
   flex: 1;
+  padding: 2px;
 }
 .el-tabs__item {
   font-weight: bold;

@@ -9,6 +9,10 @@ import "./themes/app.scss";
 import { createApp } from "vue";
 import App from "./App.vue";
 import { router } from "./router";
+import { useDark, useToggle } from '@vueuse/core'
+
+const isDark = useDark()
+useToggle(isDark);
 
 [
   faCircleXmark, faPen, faTrash, faFloppyDisk, faCirclePlus, faRotateRight, faBan

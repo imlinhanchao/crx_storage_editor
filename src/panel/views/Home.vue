@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import { computed, nextTick, ref } from 'vue';
+import { ElTree } from 'element-plus';
+import { Tree } from 'element-plus/es/components/tree-v2/src/types';
+import { computed, nextTick, ref, watch } from 'vue';
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from '../utils/is';
 
 const typeName = ref('local');
@@ -204,6 +206,14 @@ function removeChildrenIds(data: any) {
   }
 }
 
+const searchValue = ref<any>({
+  local: '',
+  session: ''
+})
+const search = (value: string, node: any) => {
+  if (!value) return true
+  return node.key.includes(value) || node.data?.toString().includes(value)
+}
 const tabData = [
   {
     name: 'local',
@@ -216,6 +226,18 @@ const tabData = [
     data: sessionTree,
   }
 ]
+
+const treeRef = ref<{ [key: string]: InstanceType<typeof ElTree> }>({});
+function setTreeRef(el: InstanceType<typeof ElTree>, key: string) {
+  if (el) treeRef.value[key] = el;
+}
+watch(() => searchValue.value.local, (val) => {
+  treeRef.value.local?.filter(val)
+})
+watch(() => searchValue.value.session, (val) => {
+  treeRef.value.session?.filter(val)
+})
+
 </script>
 <template>
   <section class="wrapper">
@@ -238,13 +260,16 @@ const tabData = [
       type="card"
     >
       <el-tab-pane v-for="t in tabData" :key="t.name" :label="t.label" :name="t.name">
+        <el-input v-model="searchValue[typeName]" placeholder="Search" />
         <el-tree
+          :ref="(el) => setTreeRef(el as InstanceType<typeof ElTree>, t.name)"
           :data="t.data.value"
           node-key="path"
           :expand-on-click-node="false"
           :default-expanded-keys="defaultExpandIds"
           @node-expand="handleNodeExpand"
           @node-collapse="handleNodeCollapse"
+          :filter-node-method="search"
         >
           <template #default="{ node, data }">
             <span class="data-tree-node" :data-path="data.path" :data-key="data.key">
