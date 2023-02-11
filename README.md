@@ -3,7 +3,7 @@
 </p>
 
 <h1 align="center">Storage Editor</h1>
-<p align="center">A Editor for Local Storage and Session Storag.</p>
+<p align="center">A Editor for Local Storage and Session Storage.</p>
 
 ## ✨ Feature
 1. 🙈 Preview Local Storage and Session Storage Data as a tree.
