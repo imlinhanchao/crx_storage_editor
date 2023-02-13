@@ -26,4 +26,5 @@
    ![](./preview/Add%20Item.png)
 
 ## 🔔 Others
+* Chrome Web Store: https://chrome.google.com/webstore/detail/lpmmcjhefcghagdhnpbodfdamfmlicfn
 * Icon made by [Freepik](https://www.flaticon.com/authors/freepik) from www.flaticon.com 
