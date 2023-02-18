@@ -173,35 +173,25 @@ function removeEmit(type: string, key: string) {
     message: 'removeItem', data: { type, key }
   }, '*')
 }
+
 const defaultExpandIds = ref<any>([])
-function handleNodeExpand(data: any) {
-  let flag = false
-  defaultExpandIds.value.some((item: any) => {
-    if (item === data.path) {
-      flag = true
-      return true
-    }
-  })
-  if (!flag) {
-    defaultExpandIds.value.push(data.path)
+function expandOrCollapse(data: any) {
+  const expandIndex = defaultExpandIds.value.findIndex((item: any) => item === data.path)
+  if (expandIndex < 0) defaultExpandIds.value.push(data.path)
+  else {
+    defaultExpandIds.value.splice(expandIndex, 1);
+    collapseChildren(data)
   }
 }
-function handleNodeCollapse(data: any) {
-  defaultExpandIds.value.some((item: any, i: number) => {
-    if (item === data.path) {
-      defaultExpandIds.value.splice(i, 1)
-    }
-  })
-  removeChildrenIds(data)
-}
-function removeChildrenIds(data: any) {
+
+function collapseChildren(data: any) {
   if (data.children) {
     data.children.forEach(function(item: any) {
       const index = defaultExpandIds.value.indexOf(item.path)
       if (index > 0) {
         defaultExpandIds.value.splice(index, 1)
       }
-      removeChildrenIds(item)
+      collapseChildren(item)
     })
   }
 }
@@ -265,10 +255,10 @@ watch(() => searchValue.value.session, (val) => {
           :ref="(el) => setTreeRef(el as InstanceType<typeof ElTree>, t.name)"
           :data="t.data.value"
           node-key="path"
-          :expand-on-click-node="false"
+          :expand-on-click-node="true"
           :default-expanded-keys="defaultExpandIds"
-          @node-expand="handleNodeExpand"
-          @node-collapse="handleNodeCollapse"
+          @node-expand="expandOrCollapse"
+          @node-collapse="expandOrCollapse"
           :filter-node-method="search"
         >
           <template #default="{ node, data }">
@@ -277,6 +267,7 @@ watch(() => searchValue.value.session, (val) => {
               <el-input
                 class="key"
                 type="text"
+                @click.stop="(e: Event) => e.stopPropagation()"
                 @keydown.esc="cancel(data)"
                 @keydown.enter="confirm(data)"
                 v-model="editKey[data.path]"
@@ -296,12 +287,13 @@ watch(() => searchValue.value.session, (val) => {
               <el-input
                 type="text"
                 v-model="editValue[data.path]"
+                @click.stop="(e: Event) => e.stopPropagation()"
                 @keydown.esc="cancel(data)"
                 @keydown.enter="confirm(data)"
                 v-if="editPath[data.path]"
                 size="small"
               />
-              <span class="action" v-if="!editPath[data.path]">
+              <span class="action" v-if="!editPath[data.path]" @click.stop="(e: Event) => e.stopPropagation()">
                 <el-button type="primary" size="small" link @click="edit(data)">
                   <font-awesome-icon icon="fa-solid fa-pen" />
                 </el-button>
@@ -312,7 +304,7 @@ watch(() => searchValue.value.session, (val) => {
                   <font-awesome-icon icon="fa-solid fa-circle-plus" />
                 </el-button>
               </span>
-              <span class="confirm" v-if="editPath[data.path]">
+              <span class="confirm" v-if="editPath[data.path]" @click.stop="(e: Event) => e.stopPropagation()">
                 <el-button type="primary" size="small" link @click="cancel(data)">
                   <font-awesome-icon icon="fa-solid fa-circle-xmark" />
                 </el-button>
