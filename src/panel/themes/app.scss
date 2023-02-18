@@ -5,6 +5,11 @@ body {
   padding: 5px 0;
   height: calc(100% - 10px);
 }
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #0b1015;
+  }
+}
 #app, html {
   height: 100%;
 }
@@ -13,6 +18,16 @@ html#popup {
   #app {
     height: auto;
   }
+}
+img#preload {
+  width: 128px;
+  height: 128px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  margin: auto;
 }
 html.dark, html, :root {
   --el-color-primary: #42b983;

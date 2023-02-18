@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Storage Editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "action": {
     "default_popup": "src/panel/index.html#/popup"
   },
@@ -34,7 +34,8 @@
   ],
   "devtools_page": "src/devtools/index.html",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "downloads"
   ],
   "web_accessible_resources": [
     {
@@ -42,7 +43,8 @@
         "*://*/*"
       ],
       "resources": [
-        "src/content-script/index.ts"
+        "src/content-script/index.ts",
+        "public/logo_128.png"
       ]
     }
   ]
