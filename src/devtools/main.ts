@@ -1,6 +1,6 @@
 
 let panelWindow: { [key:number]: Window} = {};
-chrome.devtools.panels.create("Storage Editor", "logo_128.png", "src/panel/index.html", panel => {
+chrome.devtools.panels.create("Storage Editor", "public/logo_128.png", "src/panel/index.html", panel => {
   // code invoked on panel creation
   panel.onShown.addListener( (extPanelWindow) => {
     panelWindow[chrome.devtools.inspectedWindow.tabId] = extPanelWindow;
@@ -66,8 +66,6 @@ function panelListener({ data }: { data: any}) {
       console.log('send response', response);
   });
 }
-
-chrome.tabs.onActivated
 
 // Create a connection to the background service worker
 const backgroundPageConnection = chrome.runtime.connect({

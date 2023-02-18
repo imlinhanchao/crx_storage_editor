@@ -6,19 +6,28 @@
   <link rel="icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Storage Editor</title>
-  <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
   <div id="app">
-    <img style="width: 128px;
-    height: 128px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    margin: auto;" id="logo" src="/logo.png" />
+    <style>
+      img#logo {
+        width: 128px;
+        height: 128px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        margin: auto;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #0b1015;
+        }
+      }
+    </style>
+    <img id="logo" src="/logo.png" />
   </div>
   <script type="module" src="./main.ts"></script>
 </body>
