@@ -1,6 +1,6 @@
 import { library } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faPen, faTrash, faCircleXmark, faFloppyDisk, faCirclePlus, faRotateRight, faBan } from "@fortawesome/free-solid-svg-icons";
+import { fas } from "@fortawesome/free-solid-svg-icons";
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
@@ -14,9 +14,8 @@ import { useDark, useToggle } from '@vueuse/core'
 const isDark = useDark()
 useToggle(isDark);
 
-[
-  faCircleXmark, faPen, faTrash, faFloppyDisk, faCirclePlus, faRotateRight, faBan
-].map(fa => library.add(fa))
+library.add(fas)
+
 
 const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {

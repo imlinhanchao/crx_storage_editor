@@ -1,7 +1,7 @@
 
 let panelWindow: { [key:number]: Window} = {};
 let tabListener: { [key:number]: ({ data }: { data: any}) => void } = {}
-chrome.devtools.panels.create("Storage Editor", "public/logo_128.png", "src/panel/index.html", panel => {
+chrome.devtools.panels.create("Storage Editor", "public/logo_128.png", "src/panel/index.html#/devtools", panel => {
   // code invoked on panel creation
   panel.onShown.addListener( (extPanelWindow) => {
     panelWindow[chrome.devtools.inspectedWindow.tabId] = extPanelWindow;

@@ -5,9 +5,13 @@ body {
   padding: 5px 0;
   height: calc(100% - 10px);
 }
-.full {
-  #app, &html {
-    height: 100%;
+#app, html {
+  height: 100%;
+}
+html#popup {
+  height: auto;
+  #app {
+    height: auto;
   }
 }
 html.dark, html, :root {
@@ -53,6 +57,11 @@ html.dark, html, :root {
 }
 .el-tabs__item {
   font-weight: bold;
+}
+.el-message {
+  .el-message__content {
+    white-space: nowrap;
+  }
 }
 ::-webkit-scrollbar-track-piece {
   background: 0 0;
