@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { ElTree } from 'element-plus';
-import { Tree } from 'element-plus/es/components/tree-v2/src/types';
 import { computed, nextTick, ref, watch } from 'vue';
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from '../utils/is';
 

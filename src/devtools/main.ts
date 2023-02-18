@@ -1,9 +1,19 @@
 
 let panelWindow: { [key:number]: Window} = {};
+let tabListener: { [key:number]: ({ data }: { data: any}) => void } = {}
 chrome.devtools.panels.create("Storage Editor", "public/logo_128.png", "src/panel/index.html", panel => {
   // code invoked on panel creation
   panel.onShown.addListener( (extPanelWindow) => {
     panelWindow[chrome.devtools.inspectedWindow.tabId] = extPanelWindow;
+    const tabId = chrome.devtools.inspectedWindow.tabId;
+    if (tabListener[tabId]) panelWindow[tabId].removeEventListener('message', tabListener[tabId]);
+    tabListener[tabId] = panelListener(chrome.devtools.inspectedWindow.tabId);
+    panelWindow[chrome.devtools.inspectedWindow.tabId].addEventListener('message', tabListener[tabId]);
+    initTabWindow(tabId)
+  });
+});
+
+function initTabWindow(tabId: number) {
     chrome.devtools.inspectedWindow.eval(`
       if (!window.postStorage) {
         let _setItem = Storage.prototype.setItem;
@@ -34,16 +44,12 @@ chrome.devtools.panels.create("Storage Editor", "public/logo_128.png", "src/pane
       postStorage(sessionStorage)
     `)
 
-    chrome.tabs.sendMessage(chrome.devtools.inspectedWindow.tabId, 
+    chrome.tabs.sendMessage(tabId, 
       { from: '__devtools_storage_editor', message: 'listen' }, 
       function(response) {
         console.log('send response', response);
     });
-
-    panelWindow[chrome.devtools.inspectedWindow.tabId].removeEventListener('message', panelListener);
-    panelWindow[chrome.devtools.inspectedWindow.tabId].addEventListener('message', panelListener);
-  });
-});
+}
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // Messages from content scripts should have sender.tab set
@@ -59,13 +65,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-function panelListener({ data }: { data: any}) {
-  chrome.tabs.sendMessage(chrome.devtools.inspectedWindow.tabId, 
-    { from: '__devtools_storage_editor', ...data }, 
-    function(response) {
-      console.log('send response', response);
-  });
+function panelListener(tabId: number) {
+  return async function({ data }: { data: any}) {
+    chrome.tabs.sendMessage(tabId, 
+      { from: '__devtools_storage_editor', ...data }, 
+      function(response) {
+        console.log('send response', response);
+    });
+  }
 }
+
+chrome.tabs.onUpdated.addListener((tabId, change) => {
+  console.log('id', tabId);
+  console.log('status', change);
+  if (change.status != 'complete') return;
+  initTabWindow(tabId);
+})
 
 // Create a connection to the background service worker
 const backgroundPageConnection = chrome.runtime.connect({
