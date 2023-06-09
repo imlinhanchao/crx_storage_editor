@@ -1,12 +1,9 @@
-console.log('content-script')
-
 function sendStorage(storage: Storage) {
     chrome.runtime.sendMessage({
         message: 'update',
         type: getType(storage),
         data: { ...storage }
     }, response => {
-        console.log('update response', response);
     })
     return storage;
 }
@@ -50,7 +47,6 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
 });
 
 function setItem({ type, key, data }: { type: string, key: string, data: string }) {
-  console.log('update:', type, key, data);
   switch(type) {
     case 'local':
       localStorage.setItem(key, data);
@@ -62,7 +58,6 @@ function setItem({ type, key, data }: { type: string, key: string, data: string 
 }
 
 function removeItem({ type, key }: { type: string, key: string }) {
-  console.log('remove:', type, key);
   switch(type) {
     case 'local':
       localStorage.removeItem(key);

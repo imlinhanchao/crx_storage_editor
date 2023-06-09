@@ -15,18 +15,23 @@ chrome.devtools.panels.create("Storage Editor", "public/logo_128.png", "src/pane
 
 function initTabWindow(tabId: number) {
     chrome.devtools.inspectedWindow.eval(`
+    try {
       if (!window.postStorage) {
-        let _setItem = Storage.prototype.setItem;
+        window.postStorage = (storage) => {
+          try {
+            window.postMessage({
+              from: 'tab_storage_editor',
+              message: 'storage',
+              data: storage == localStorage ? 'local' : 'session'
+            }, '*')
+          } catch (e) {
+
+          }
+        }
+        const _setItem = Storage.prototype.setItem;
         Storage.prototype.setItem = function(keyName, keyValue) {
           postStorage(this)
           return _setItem.call(this, keyName, keyValue)
-        }
-        window.postStorage = (storage) => {
-          window.postMessage({
-            from: 'tab_storage_editor',
-            message: 'storage',
-            data: storage == localStorage ? 'local' : 'session'
-          }, '*')
         }
         window.addEventListener('message', function({ data }) {
           if (data && data.from === '__content_script_storage_editor') {
@@ -42,12 +47,14 @@ function initTabWindow(tabId: number) {
       }
       postStorage(localStorage)
       postStorage(sessionStorage)
+    } catch (e) {
+
+    }
     `)
 
     chrome.tabs.sendMessage(tabId, 
       { from: '__devtools_storage_editor', message: 'listen' }, 
       function(response) {
-        console.log('send response', response);
     });
 }
 
@@ -56,8 +63,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (sender.tab && sender.tab.active 
     && chrome.devtools.inspectedWindow.tabId == sender.tab.id 
     && panelWindow) {
-    console.log('sender', sender.tab);
-    console.log('id', chrome.devtools.inspectedWindow.tabId)
     panelWindow[chrome.devtools.inspectedWindow.tabId].postMessage({ ...request, from: '__devtools_storage_editor'});
     sendResponse({
       result: 'success'
@@ -70,14 +75,11 @@ function panelListener(tabId: number) {
     chrome.tabs.sendMessage(tabId, 
       { from: '__devtools_storage_editor', ...data }, 
       function(response) {
-        console.log('send response', response);
     });
   }
 }
 
 chrome.tabs.onUpdated.addListener((tabId, change) => {
-  console.log('id', tabId);
-  console.log('status', change);
   if (change.status != 'complete') return;
   initTabWindow(tabId);
 })
@@ -92,7 +94,5 @@ backgroundPageConnection.postMessage({
   name: 'init',
   tabId: chrome.devtools.inspectedWindow.tabId
 });
-
-console.log('devtools');
 
 export {};

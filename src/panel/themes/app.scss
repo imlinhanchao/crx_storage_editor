@@ -111,6 +111,10 @@ html.dark, html, :root {
 .value {
   color: #bdc6cf;
 }
+.data-boolean {
+  display: inline-block;
+  width: 3em;
+}
 .data-boolean, .data-number {
   color: #03c;
 }

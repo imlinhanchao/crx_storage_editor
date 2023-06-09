@@ -309,6 +309,10 @@ watch(() => searchValue.value.session, (val) => {
                 <el-button type="primary" size="small" link @click="copy(data)">
                   <font-awesome-icon icon="fa-solid fa-copy" />
                 </el-button>
+                <el-button v-if="isBoolean(data.data)" type="primary" size="small" link @click="data.data = !data.data">
+                  <font-awesome-icon v-if="data.data" icon="fa-regular fa-square-check"/>
+                  <font-awesome-icon v-else icon="fa-regular fa-square" />
+                </el-button>
               </span>
               <span class="confirm" v-if="editPath[data.path]" @click.stop="(e: Event) => e.stopPropagation()">
                 <el-button type="primary" size="small" link @click="cancel(data)">
