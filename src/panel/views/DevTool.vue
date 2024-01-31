@@ -3,6 +3,7 @@ import { ElMessage, ElTree } from 'element-plus';
 import { computed, nextTick, ref, watch } from 'vue';
 import { copyText } from '../utils';
 import { isArray, isBoolean, isNull, isNumber, isObject, isString, isUnDef } from '../utils/is';
+import Edit from '../components/edit.vue';
 
 const typeName = ref('local');
 const storage = ref<any>({
@@ -108,7 +109,23 @@ function getProps(obj: any) {
 function isRoot(node: any) {
   return node.parent == storage.value.local || node.parent == storage.value.session;
 }
+const editRef = ref<InstanceType<typeof Edit>>();
 function edit(node: any) {
+  if (node.type || toView(node.data).length > 128) {
+    editRef.value?.open(node, (key, val) => {
+      try {
+        editValue.value[node.path] = val;
+        editKey.value[node.path] = key;
+        confirm(node);
+        return true;
+      } catch (error) {
+        ElMessage.error('Invalid JSON format.');
+        return false;
+      }
+    });
+    return;
+  }
+
   editValue.value[node.path] = toView(node.data)
   editKey.value[node.path] = node.key
   editPath.value[node.path] = true;
@@ -229,7 +246,7 @@ watch(() => searchValue.value.local, (val) => {
 })
 watch(() => searchValue.value.session, (val) => {
   treeRef.value.session?.filter(val)
-})
+}) 
 
 </script>
 <template>
@@ -327,6 +344,7 @@ watch(() => searchValue.value.session, (val) => {
         </el-tree>
       </el-tab-pane>
     </el-tabs>
+    <Edit ref="editRef" />
   </section>
 </template>
 <style lang="scss" scoped>
